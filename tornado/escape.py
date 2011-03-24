@@ -27,22 +27,30 @@ except: bytes = str
 
 # json module is in the standard library as of python 2.6; fall back to
 # simplejson if present for older versions.
+
+def dt_serialize(o):
+    if hasattr(o,'isoformat'):
+        return o.isoformat()
+    else:
+        raise TypeError(repr(o) + " is not JSON serializable")
+
 try:
     import json
     assert hasattr(json, "loads") and hasattr(json, "dumps")
     _json_decode = json.loads
-    _json_encode = json.dumps
+    _json_encode = lambda v: json.dumps(v,default=dt_serialize)
+
 except:
     try:
         import simplejson
         _json_decode = lambda s: simplejson.loads(_unicode(s))
-        _json_encode = lambda v: simplejson.dumps(v)
+        _json_encode = lambda v: simplejson.dumps(v,default=dt_serialize)
     except ImportError:
         try:
             # For Google AppEngine
             from django.utils import simplejson
             _json_decode = lambda s: simplejson.loads(_unicode(s))
-            _json_encode = lambda v: simplejson.dumps(v)
+            _json_encode = lambda v: simplejson.dumps(v,default=dt_serialize)
         except ImportError:
             def _json_decode(s):
                 raise NotImplementedError(
